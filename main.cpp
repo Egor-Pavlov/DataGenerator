@@ -1,17 +1,20 @@
 #include <QCoreApplication>
-#include "datagenerator.h"
+#include <QJsonDocument>
+#include <QJsonObject>
 #include "mytcpserver.h"
 
 int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
+    // Создаем сервер
     DataGenerator generator;
 
-    //принимаем запрос на данные с конкретным временем
-    //генерим данные с таким временем
-    //отсылаем
+        //принимаем запрос на данные с конкретным временем
+        //генерим данные с таким временем
+        //отсылаем
 
     MyTcpServer server;
+
 
 
 

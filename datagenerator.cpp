@@ -1,45 +1,77 @@
 #include "datagenerator.h"
 #include <iomanip>
 #include <random>
+#include <QJsonObject>
+#include <QJsonArray>
+#include <QJsonDocument>
 
 //режим REALTIME
 
 //вход - мак адреса, выход - <Мак + координата>, делаем updateCoord у объектов у которых совпал мак
 //если мака нет в списке, то есть он пришел впервые, то генерация(запрос) имени и добавление в список
 
-//QVector<std::pair<QString, Coordinate>> DataGenerator::GenerateCoordinate(const QVector<Device>& devices,
-//                                                                          const QPoint& point, QDateTime time)
-//{
-//    QVector<std::pair<QString, Coordinate>> Pairs;
+void DataGenerator::GenerateCoordinate(QDateTime time)
+{
+    if(coords.size() == 0)
+    {
+        CurrentCoord *c = new CurrentCoord(GenerateMacAddress(), GenerateName(), ((-50 + 228) + rand()% 100),
+                                           ((-50 + 228) + rand()% 100), time);
+        //имитация что появилось новое устройство
+        coords.append(*c);
+        return;
+    }
 
-//    //для каждого мака придумываем координату
-//    for(int i = 0; i < devices.size(); i++)
-//    {
-//        int x = -20 + devices[i].GetCurrentCoord().GetX() + rand() % 40;
-//        int y = devices[i].GetCurrentCoord().GetY() - 20 + rand() % 40;
-//        Pairs.append(std::make_pair(devices[i].GetMacAddres(), Coordinate(x, y, time)));
-//    }
+    //для каждого мака придумываем координату
+    for(int i = 0; i < coords.size(); i++)
+    {
+        coords[i].x = -20 + coords[i].x + rand() % 40;
+        coords[i].y = -20 + coords[i].y + rand() % 40;
+        coords[i].dateTime = time;
+    }
 
-//    int v = 0 + rand() % 100;//вероятность появления нового устройства в сети
-//    if (v >= 95)
-//    {
-//        //имитация что появилось новое устройство
-//        Pairs.append(std::make_pair(GenerateMacAddress(), Coordinate((-50 + point.x()) + rand()% 100,
-//                                                                     (-50 + point.y()) + rand()% 100, time)));
-//    }
+    int v = 0 + rand() % 100;//вероятность появления нового устройства в сети
+    if (v >= 95)
+    {
+        CurrentCoord *c = new CurrentCoord(GenerateMacAddress(), GenerateName(), ((-50 + 228) + rand()% 100),
+                                           ((-50 + 228) + rand()% 100), time);
+        //имитация что появилось новое устройство
+        coords.append(*c);
+    }
 
-//    else if (v <= 5)
-//    {
-//        if(Pairs.size() > 4)
-//        {
-//            //удаляем одно старое, как будто оно исчезло из помещения
-//            int a = 0 + rand() % Pairs.size();
-//            Pairs.removeAt(a);
-//        }
-//    }
+    else if (v <= 5)
+    {
+        if(coords.size() > 4)
+        {
+            //удаляем одно старое, как будто оно исчезло из помещения
+            int a = 0 + rand() % coords.size();
+            coords.removeAt(a);
+        }
+    }
+}
 
-//    return Pairs;
-//}
+QString DataGenerator::createJsonData()
+{
+    QJsonArray jsonArray;
+    for (const auto& coord : coords)
+    {
+        QJsonObject obj
+        {
+            {"Mac", coord.Mac},
+            {"Name", coord.Name},
+            {"x", coord.x},
+            {"y", coord.y},
+            {"dateTime", coord.dateTime.toString()}
+        };
+        jsonArray.append(obj);
+    }
+    QJsonObject jsonObj
+    {
+        {"coords", jsonArray}
+    };
+    QJsonDocument jsonDoc(jsonObj);
+    return jsonDoc.toJson(QJsonDocument::Indented);
+}
+
 
 QString DataGenerator::GenerateMacAddress()
 {

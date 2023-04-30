@@ -4,22 +4,29 @@
 #include <QObject>
 #include <QTcpServer>
 #include <QTcpSocket>
+#include <QVector>
+#include "datagenerator.h"
 
-class MyTcpServer : public QObject
+class MyTcpServer : public QTcpServer
 {
     Q_OBJECT
 public:
-    explicit MyTcpServer(QObject *parent = 0);
-
-public slots:
-    void slotNewConnection();
-    void slotServerRead();
-    void slotClientDisconnected();
+    MyTcpServer();
+    QTcpSocket * Socket;
 
 private:
-    QTcpServer * mTcpServer;
-    QTcpSocket * mTcpSocket;
-    int PortId = 6000;
+    DataGenerator Generator;
+
+    QVector <QTcpSocket*> sockets;
+    QByteArray Data;
+    quint16 nextBlockSize = 0;//размер блока данных
+
+    void SendToClient(QString str, qintptr socketDescriptor);
+
+public slots:
+    void incomingConnection(qintptr socketDescriptor);
+    void slotReadyRead();
+    void slotClientDisconnected();
 };
 
 #endif // MYTCPSERVER_H
