@@ -1,10 +1,7 @@
-#include(C:/qt proj/Generator/qhttpserver/qhttpserver.pri)
 QT -= gui
-QT += core network
+QT += core
+#QT += network
 QT += sql
-#QT += qhttpserver
-#LIBS += qhttpserver
-#qmake && make && su -c 'make install'
 
 
 CONFIG += c++17 console
@@ -17,8 +14,7 @@ CONFIG -= app_bundle
 SOURCES += \
         currentcoord.cpp \
         datagenerator.cpp \
-        main.cpp \
-        mytcpserver.cpp
+        main.cpp
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
@@ -27,5 +23,4 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 
 HEADERS += \
     currentcoord.h \
-    datagenerator.h \
-    mytcpserver.h
+    datagenerator.h

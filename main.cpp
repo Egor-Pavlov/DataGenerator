@@ -1,7 +1,8 @@
 #include <QCoreApplication>
 #include <QJsonDocument>
 #include <QJsonObject>
-#include "mytcpserver.h"
+#include <datagenerator.cpp>
+
 
 int main(int argc, char *argv[])
 {
@@ -12,11 +13,5 @@ int main(int argc, char *argv[])
         //принимаем запрос на данные с конкретным временем
         //генерим данные с таким временем
         //отсылаем
-
-    MyTcpServer server;
-
-
-
-
     return a.exec();
 }
