@@ -28,8 +28,8 @@
 class DataGenerator
 {
 public:
-    //DataGenerator();
-    QVector <CurrentCoord> coords;//mac, name, x, y, date_time
+    int RoomsCount;
+    QVector <CurrentCoord> coords;//mac, name, x, y, date_time, roomid
     QString GenerateMacAddress();
     QString GenerateName();
     QString createJsonData();
