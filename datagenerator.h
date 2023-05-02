@@ -32,7 +32,6 @@ public:
     QVector <CurrentCoord> coords;//mac, name, x, y, date_time, roomid
     QString GenerateMacAddress();
     QString GenerateName();
-    QString createJsonData();
     void GenerateCoordinate(QDateTime time = QDateTime::currentDateTime());
 };
 

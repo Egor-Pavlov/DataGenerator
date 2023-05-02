@@ -135,8 +135,11 @@ int main(int argc, char *argv[])
         qDebug() << "Succesfully connected!";
         //получаем данные об устройствах и их последнем положении
         readActualData(generator);
-        for(int i = 0; i < 10; i++)
+        for(int i = 0; i < 100; i++)
         {
+
+//            QThread::sleep(1000); // блокирует выполнение текущего потока на 1 секунду
+
             //генерим данные по всем устройствам на основе положения (мб генерим новые устройства)
             generator.GenerateCoordinate();
             foreach(const CurrentCoord& c, generator.coords)

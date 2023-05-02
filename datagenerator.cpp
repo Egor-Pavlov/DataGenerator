@@ -49,30 +49,6 @@ void DataGenerator::GenerateCoordinate(QDateTime time)
     }
 }
 
-QString DataGenerator::createJsonData()
-{
-    QJsonArray jsonArray;
-    for (const auto& coord : coords)
-    {
-        QJsonObject obj
-        {
-            {"Mac", coord.Mac},
-            {"Name", coord.Name},
-            {"x", coord.x},
-            {"y", coord.y},
-            {"dateTime", coord.dateTime.toString()}
-        };
-        jsonArray.append(obj);
-    }
-    QJsonObject jsonObj
-    {
-        {"coords", jsonArray}
-    };
-    QJsonDocument jsonDoc(jsonObj);
-    return jsonDoc.toJson(QJsonDocument::Indented);
-}
-
-
 QString DataGenerator::GenerateMacAddress()
 {
     // Создаем генератор случайных чисел
