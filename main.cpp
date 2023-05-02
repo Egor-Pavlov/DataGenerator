@@ -64,7 +64,8 @@ void addCoordinates(const CurrentCoord &currentCoord)
     query.bindValue(":y", currentCoord.y);
     query.bindValue(":timestamp", currentCoord.dateTime.toString("yyyy-MM-dd hh:mm:ss"));
 
-    if (!query.exec()) {
+    if (!query.exec())
+    {
         qCritical() << "Ошибка выполнения запроса: " << query.lastError().text();
         return;
     }
@@ -73,6 +74,49 @@ void addCoordinates(const CurrentCoord &currentCoord)
              << currentCoord.RoomId << currentCoord.x << currentCoord.y << currentCoord.dateTime;
 }
 
+void readActualData(DataGenerator &generator)
+{
+    //получаем количество комнат для генерации
+    QSqlQuery query;
+    query.exec("SELECT COUNT(*) FROM Rooms;");
+    if (query.next())
+    {
+        generator.RoomsCount = query.value(0).toInt();
+        qDebug() << "Number of rows in Rooms table:" << generator.RoomsCount;
+    }
+    else
+    {
+        qDebug() << "Query failed:" << query.lastError().text();
+        return ;
+    }
+
+    //читаем какие устройства есть в базе чтобы для них генерировать
+    query.prepare("SELECT id, mac_address, name FROM Devices");
+    if (!query.exec())
+    {
+        qCritical() << "Ошибка выполнения запроса: " << query.lastError().text();
+        return ;
+    }
+
+    while (query.next())
+    {
+        //читаем последние координаты каждого устройства
+        QSqlQuery query1;
+        query1.prepare("SELECT * FROM Coordinates WHERE device_id = :device_id ORDER BY timestamp DESC LIMIT 1;");
+        query1.bindValue(":device_id", query.value(0).toInt());
+        if (!query1.exec())
+        {
+            qCritical() << "Ошибка выполнения запроса: " << query1.lastError().text();
+            return ;
+        }
+        while (query1.next())
+        {
+            CurrentCoord *c = new CurrentCoord(query.value(1).toString(), query.value(2).toString(), query1.value(3).toInt(), query1.value(4).toInt(),
+                                              query1.value(5).toDateTime(), query1.value(2).toInt());
+            generator.coords.append(*c);
+        }
+    }
+}
 
 int main(int argc, char *argv[])
 {
@@ -85,6 +129,25 @@ int main(int argc, char *argv[])
     db.setDatabaseName("Coords");
     db.setUserName("generator");
     db.setPassword("1234");
+
+    if(db.open())
+    {
+        qDebug() << "Succesfully connected!";
+        //получаем данные об устройствах и их последнем положении
+        readActualData(generator);
+        for(int i = 0; i < 10; i++)
+        {
+            //генерим данные по всем устройствам на основе положения (мб генерим новые устройства)
+            generator.GenerateCoordinate();
+            foreach(const CurrentCoord& c, generator.coords)
+            {
+                addCoordinates(c);
+            }
+        }
+    }
+
+    return a.exec();
+}
 
 //закинули картинку
 //    if(db.open())
@@ -109,33 +172,3 @@ int main(int argc, char *argv[])
 //        }
 //    }
 
-    if(db.open())
-    {
-        qDebug() << "Succesfully connected!";
-        //получаем количество комнат для генерации
-        QSqlQuery query;
-        query.exec("SELECT COUNT(*) FROM Rooms;");
-        if (query.next())
-        {
-            generator.RoomsCount = query.value(0).toInt();
-            qDebug() << "Number of rows in Rooms table:" << generator.RoomsCount;
-        }
-        else
-        {
-            qDebug() << "Query failed:" << query.lastError().text();
-            return 0;
-        }
-
-        for(int i = 0; i < 10; i++)
-        {
-            //генерим данные по всем устройствам (мб генерим новые устройства)
-            generator.GenerateCoordinate();
-            foreach(const CurrentCoord& c, generator.coords)
-            {
-                addCoordinates(c);
-            }
-        }
-    }
-
-    return a.exec();
-}
