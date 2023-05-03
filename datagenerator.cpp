@@ -15,7 +15,7 @@ void DataGenerator::GenerateCoordinate(QDateTime time)
     if(coords.size() == 0)
     {
         CurrentCoord *c = new CurrentCoord(GenerateMacAddress(), GenerateName(), ((-50 + 228) + rand()% 100),
-                                           ((-50 + 228) + rand()% 100), time, 1 + rand()% RoomsCount);
+                                           ((-50 + 228) + rand()% 100), time.addSecs(-2 + rand()% 5), 1 + rand()% RoomsCount);
         //имитация что появилось новое устройство
         coords.append(*c);
         return;
@@ -26,14 +26,14 @@ void DataGenerator::GenerateCoordinate(QDateTime time)
     {
         coords[i].x = -20 + coords[i].x + rand() % 40;
         coords[i].y = -20 + coords[i].y + rand() % 40;
-        coords[i].dateTime = time;
+        coords[i].dateTime = time.addSecs(-2 + rand()% 5);
     }
 
     int v = 0 + rand() % 100;//вероятность появления нового устройства в сети
     if (v >= 95)
     {
         CurrentCoord *c = new CurrentCoord(GenerateMacAddress(), GenerateName(), ((-50 + 228) + rand()% 100),
-                                           ((-50 + 228) + rand()% 100), time, 1 + rand()% RoomsCount);
+                                           ((-50 + 228) + rand()% 100), time.addSecs(-2 + rand()% 5), 1 + rand()% RoomsCount);
         //имитация что появилось новое устройство
         coords.append(*c);
     }
