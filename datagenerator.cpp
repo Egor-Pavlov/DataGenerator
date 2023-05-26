@@ -14,8 +14,8 @@ void DataGenerator::GenerateCoordinate(QDateTime time)
 {
     if(coords.size() == 0)
     {
-        CurrentCoord *c = new CurrentCoord(GenerateMacAddress(), GenerateName(), ((-50 + 228) + rand()% 100),
-                                           ((-50 + 228) + rand()% 100), time.addSecs(-2 + rand()% 5), 1 + rand()% RoomsCount);
+        CurrentCoord *c = new CurrentCoord(GenerateMacAddress(), GenerateName(), ((-50 + 1218) + rand()% 100),
+                                           ((-50 + 897) + rand()% 100), time.addSecs(0 + rand()% 5), 1 + rand()% RoomsCount);
         //имитация что появилось новое устройство
         coords.append(*c);
         return;
@@ -32,8 +32,8 @@ void DataGenerator::GenerateCoordinate(QDateTime time)
     int v = 0 + rand() % 100;//вероятность появления нового устройства в сети
     if (v >= 95)
     {
-        CurrentCoord *c = new CurrentCoord(GenerateMacAddress(), GenerateName(), ((-50 + 228) + rand()% 100),
-                                           ((-50 + 228) + rand()% 100), time.addSecs(-2 + rand()% 5), 1 + rand()% RoomsCount);
+        CurrentCoord *c = new CurrentCoord(GenerateMacAddress(), GenerateName(), ((-50 + 1218) + rand()% 100),
+                                           ((-50 + 897) + rand()% 100), time.addSecs(0 + rand()% 5), 1 + rand()% RoomsCount);
         //имитация что появилось новое устройство
         coords.append(*c);
     }
@@ -74,11 +74,11 @@ QString DataGenerator::GenerateMacAddress()
 QString DataGenerator::GenerateName()
 {
     // Создаем массив возможных имен
-    std::vector<std::string> names = {"Александр", "Алексей", "Анатолий", "Андрей", "Антон", "Аркадий", "Вадим",
-                                      "Валентин", "Валерий", "Василий", "Виталий", "Владислав", "Григорий",
-                                      "Даниил", "Евгений", "Егор", "Игорь", "Кирилл", "Леонид",
-                                      "Михаил", "Никита", "Николай", "Роман", "Руслан",
-                                      "Станислав", "Степан", "Фёдор", "Юрий"};
+    std::vector<std::string> names = {"Alexander", "Alexey", "Anatoly", "Andrey", "Anton", "Arkady", "Vadim",
+                                      "Valentin", "Valery", "Vasily", "Vitaly", "Vladislav", "Grigory",
+                                      "Daniel", "Evgeny", "Egor", "Igor", "Kirill", "Leonid",
+                                      "Michael", "Nikita", "Nikolay", "Roman", "Ruslan",
+                                      "Stanislav", "Stepan", "Fedor", "Yuriy"};
 
     // Создаем генератор случайных чисел
     std::random_device rd;

@@ -9,6 +9,61 @@
 
 #include <datagenerator.cpp>
 
+void addToGroupAccesDevices(int deviceId)
+{
+    QSqlQuery query;
+    //добавляем чтобы админы видели устройство
+
+    query.prepare("INSERT INTO groupaccesdevices (group_id, device_id) "
+                  "VALUES (:group_id, :device_id) "
+                  "ON CONFLICT DO NOTHING;");
+    query.bindValue(":group_id", 1);
+    query.bindValue(":device_id", deviceId);
+
+
+
+    if (!query.exec())
+    {
+        qDebug() << "Error inserting GroupAccessDevices record:" << query.lastError().text();
+    }
+
+    //с какой-то вероятностью устройство будут видеть и просто операторы
+    if(0 + rand() % 100 < 70)
+    {
+         query.prepare("INSERT INTO groupaccesdevices (group_id, device_id) "
+                      "VALUES (:group_id, :device_id) "
+                      "ON CONFLICT DO NOTHING;");
+        query.bindValue(":group_id", 2);
+        query.bindValue(":device_id", deviceId);
+
+        if (!query.exec())
+        {
+            qDebug() << "Error inserting GroupAccessDevices record:" << query.lastError().text();
+        }
+    }
+
+}
+
+void addToDevicesinAreas(const CurrentCoord &currentCoord, int deviceId)
+{
+    QSqlQuery query;
+    query.prepare("INSERT INTO DevicesInAreas (DeviceId, AreaId, X, Y, DateTime, Xp, Yp) "
+                  "VALUES (:device_id, :area_id, :x, :y, :timestamp, :xp, :yp)");
+    query.bindValue(":device_id", deviceId);
+    query.bindValue(":area_id", currentCoord.RoomId);
+    query.bindValue(":x", currentCoord.x);
+    query.bindValue(":y", currentCoord.y);
+    query.bindValue(":timestamp", currentCoord.dateTime.toString("yyyy-MM-dd hh:mm:ss"));
+    query.bindValue(":xp", currentCoord.x);
+    query.bindValue(":yp", currentCoord.y);
+
+    if (!query.exec())
+    {
+        qCritical() << "Ошибка выполнения запроса: " << query.lastError().text();
+        return;
+    }
+}
+
 void addCoordinates(const CurrentCoord &currentCoord)
 {
     // Открытие соединения с базой данных
@@ -21,14 +76,14 @@ void addCoordinates(const CurrentCoord &currentCoord)
 
     QSqlQuery query;
 
+    //смотрим есть ли девайс в базе, если нет вставляем
     // Выбор id устройства по его mac-адресу
     query.prepare("INSERT INTO Devices (mac_address, name) "
                   "SELECT :mac_address, :name "
                   "WHERE NOT EXISTS (SELECT id FROM Devices WHERE mac_address = :mac_address)");
 
     query.bindValue(":mac_address", currentCoord.Mac);
-    query.bindValue(":name", currentCoord.Name);
-
+    query.bindValue(":name", currentCoord.Name); 
 
     if(!query.exec())
     {
@@ -44,10 +99,15 @@ void addCoordinates(const CurrentCoord &currentCoord)
         return;
     }
 
+    //получаем id устройства которое хотим обработать
     int deviceId = -1;
     if (query.next())
     {
+
         deviceId = query.value(0).toInt();
+        //если нет такой записи в таблице доступа групп к устройствам - добавляем доступ админам и с вероятностью операторам
+        addToGroupAccesDevices(deviceId);
+
     }
     else
     {
@@ -55,34 +115,23 @@ void addCoordinates(const CurrentCoord &currentCoord)
         return;
     }
 
-    // Вставка новой строки в таблицу Coordinates
-    query.prepare("INSERT INTO Coordinates (device_id, room_id, x, y, timestamp) "
-                  "VALUES (:device_id, :room_id, :x, :y, :timestamp)");
-    query.bindValue(":device_id", deviceId);
-    query.bindValue(":room_id", currentCoord.RoomId);
-    query.bindValue(":x", currentCoord.x);
-    query.bindValue(":y", currentCoord.y);
-    query.bindValue(":timestamp", currentCoord.dateTime.toString("yyyy-MM-dd hh:mm:ss"));
-
-    if (!query.exec())
-    {
-        qCritical() << "Ошибка выполнения запроса: " << query.lastError().text();
-        return;
-    }
+    //добавляем данные в таблицу координат
+    addToDevicesinAreas(currentCoord, deviceId);
 
     qDebug() << "Добавлена запись в таблицу Coordinates: " << currentCoord.Name << currentCoord.Mac
              << currentCoord.RoomId << currentCoord.x << currentCoord.y << currentCoord.dateTime;
+
 }
 
 void readActualData(DataGenerator &generator)
 {
     //получаем количество комнат для генерации
     QSqlQuery query;
-    query.exec("SELECT COUNT(*) FROM Rooms;");
+    query.exec("SELECT COUNT(*) FROM areas;");
     if (query.next())
     {
         generator.RoomsCount = query.value(0).toInt();
-        qDebug() << "Number of rows in Rooms table:" << generator.RoomsCount;
+        qDebug() << "Number of rows in areas table:" << generator.RoomsCount;
     }
     else
     {
@@ -102,8 +151,8 @@ void readActualData(DataGenerator &generator)
     {
         //читаем последние координаты каждого устройства
         QSqlQuery query1;
-        query1.prepare("SELECT * FROM Coordinates WHERE device_id = :device_id ORDER BY timestamp DESC LIMIT 1;");
-        query1.bindValue(":device_id", query.value(0).toInt());
+        query1.prepare("SELECT * FROM DevicesinAreas WHERE deviceid = :device_id ORDER BY datetime DESC LIMIT 1;");
+        query1.bindValue(":deviceid", query.value(0).toInt());
         if (!query1.exec())
         {
             qCritical() << "Ошибка выполнения запроса: " << query1.lastError().text();
@@ -130,12 +179,13 @@ int main(int argc, char *argv[])
     db.setUserName("generator");
     db.setPassword("1234");
 
+
     if(db.open())
     {
         qDebug() << "Succesfully connected!";
         //получаем данные об устройствах и их последнем положении
         readActualData(generator);
-        for(int i = 0; i < 15; i++)
+        for(int i = 0; i < 50; i++)
         {
 
             QThread::sleep(1);
@@ -153,26 +203,79 @@ int main(int argc, char *argv[])
     return a.exec();
 }
 
-//закинули картинку
-//    if(db.open())
+////закинули картинку
+//if(db.open())
+//{
+//    qDebug() << "Succesfully connected!";
+//    QSqlQuery query;
+//    QFile imageFile("C:/Users/Егор/Downloads/image.jpg");
+//    if (!imageFile.open(QIODevice::ReadOnly))
 //    {
-//        qDebug() << "Succesfully connected!";
-//        QSqlQuery query;
-//        QFile imageFile("C:/Users/Егор/Downloads/image.jpg");
-//        if (!imageFile.open(QIODevice::ReadOnly)) {
-//            qWarning() << "Failed to open image file";
-//            return 0;
-//        }
-//        QByteArray imageData = imageFile.readAll();
-
-//        query.prepare("INSERT INTO Rooms (name, description, owner, image) VALUES (:name, :description, :owner, :image)");
-//        query.bindValue(":name", "TestRoom");
-//        query.bindValue(":description", "FirstTestRoom");
-//        query.bindValue(":owner", "room_owner");
-//        query.bindValue(":image", imageData);
-
-//        if (!query.exec()) {
-//            qWarning() << "Failed to insert image data: " << query.lastError().text();
-//        }
+//        qWarning() << "Failed to open image file";
+//        return 0;
 //    }
+//    QByteArray image = imageFile.readAll();
+
+//    // Определим значения для добавления
+//    QDateTime dateStart = QDateTime::currentDateTime();
+//    QDateTime dateEnd = QDateTime::currentDateTime().addYears(1);
+//    float scale = 1.0;
+//    int xc = 1218;
+//    int yc = 897;
+//    QString areaDescription = "Описание зоны";
+//    QString buildingDescription = "Описание здания";
+//    QString address = "Красный проспект";
+//    float latitude = 55.75;
+//    float longitude = 37.61;
+
+//    // Добавление записи в таблицу Areas
+
+
+//    // Добавление записи в таблицу Buildings
+//    query.prepare("INSERT INTO Buildings (description, Address, Latitude, Longitude) "
+//                  "VALUES (:description, :address, :latitude, :longitude)");
+//    query.bindValue(":description", buildingDescription);
+//    query.bindValue(":address", address);
+//    query.bindValue(":latitude", latitude);
+//    query.bindValue(":longitude", longitude);
+//    if (!query.exec())
+//    {
+//        qCritical() << "Ошибка выполнения запроса: " << query.lastError().text();
+//        return 0;
+//    }
+//    // Получение идентификатора добавленной записи в таблицу Buildings
+//    int newBuildingId = query.lastInsertId().toInt();
+
+//    query.prepare("INSERT INTO Areas (description, BuildingId, name) "
+//                  "VALUES (:description, :buildingId, :name)");
+//    query.bindValue(":description", areaDescription);
+//    query.bindValue(":buildingId", newBuildingId);
+//    query.bindValue(":name", "Тестовый план №1");
+//    if (!query.exec())
+//    {
+//        qCritical() << "Ошибка выполнения запроса: " << query.lastError().text();
+//        return 0;
+//    }
+
+//    // Получение идентификатора добавленной записи в таблицу Areas
+//    int newAreaId = query.lastInsertId().toInt();
+
+//    // Добавление записи в таблицу Plans
+//    query.prepare("INSERT INTO Plans (AreaId, Image, Date_start, Date_end, scale, Xc, Yc) "
+//                  "VALUES (:areaId, :image, :dateStart, :dateEnd, :scale, :xc, :yc)");
+//    query.bindValue(":areaId", newAreaId);
+//    query.bindValue(":image", image);
+//    query.bindValue(":dateStart", dateStart.toString("yyyy-MM-dd hh:mm:ss"));
+//    query.bindValue(":dateEnd", dateEnd.toString("yyyy-MM-dd hh:mm:ss"));
+//    query.bindValue(":scale", scale);
+//    query.bindValue(":xc", xc);
+//    query.bindValue(":yc", yc);
+//    if (!query.exec())
+//    {
+//        qCritical() << "Ошибка выполнения запроса: " << query.lastError().text();
+//        return 0;
+//    }
+//}
+
+
 
